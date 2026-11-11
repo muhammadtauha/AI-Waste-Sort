@@ -14,20 +14,21 @@ Encourage recycling through gamification (points, badges, leaderboard)
 Provide insights and analytics for user contributions
 Build a scalable AI-powered environmental solution
 🏗️ Architecture Overview
-Frontend (React)
+Frontend (React + Vite)
         ↓
-Backend API (Node.js + Express)
+Backend API (Node.js + Express + MongoDB)
         ↓
-Inference Service (Flask + TensorFlow Model)
-        ↓
-Database (MongoDB)
+AI Inference Service (Python + FastAPI + YOLO)
 📁 Folder Structure
 project-root/
 │
-├── frontend/          # React app (UI)
-├── backend/           # Node.js + Express API
-├── inference/         # Flask AI prediction service
-├── model/             # Training scripts & saved model
+├── ai-waste-sort/          # React app (UI)
+├── backend/
+│   ├── base_server/        # Node.js + Express REST API
+│   ├── main.py             # FastAPI inference service (/scan)
+│   ├── train.py            # Model training script
+│   ├── data/               # Training dataset (dataset-resized/)
+│   └── requirements.txt    # Python dependencies
 ├── docker-compose.yml
 └── README.md
 ⚙️ Tech Stack
@@ -41,8 +42,8 @@ Express.js
 MongoDB (Mongoose)
 🤖 AI / ML
 Python
-TensorFlow / Keras
-Flask (Inference API)
+TensorFlow / Keras / Ultralytics (YOLO)
+FastAPI (Inference API)
 🚀 DevOps
 Docker & Docker Compose
 GitHub Actions (planned)
@@ -127,16 +128,87 @@ Streak Master
 🐳 Run Locally (Docker)
 docker-compose up --build
 
-Services:
+---
 
-Frontend → http://localhost:3000
-Backend → http://localhost:4000
-Inference → http://localhost:5000
+## 🚀 Getting Started (Local Development)
 
- TO RUN :
- Frontend : cd ai-waste-sort && npm i && npm run dev  →  http://localhost:8080
- Backend  : cd backend/base_server && npm i && npm run dev  →  http://localhost:3000/v1
- Model AI : cd backend && python -m uvicorn main:app --port 8000 --reload  →  http://localhost:8000
+You need **three services** running: the React frontend, the Express REST API, and the Python AI service.
+
+### Prerequisites
+
+- Node.js 18+
+- Python 3.10–3.12 (recommended for the full ML stack; 3.13+ works in mock mode)
+- MongoDB — a free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster works
+
+### 1. Configure environment variables
+
+**Backend API** — edit `backend/base_server/.env.development`:
+
+```env
+ENV=development
+PORT=3000
+SERVER_URL=http://localhost:3000
+DATABASE_URL="mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>"
+MIGRATE_MONGO_URI="mongodb://localhost:27017/base"
+MIGRATE_AUTOSYNC="true"
+SALT_ROUNDS="10"
+EMAIL_SERVICE_API_KEY="re_your_resend_key"
+ACCESS_TOKEN_SECRET="your-access-secret"
+REFRESH_TOKEN_SECRET="your-refresh-secret"
+```
+
+> Get a free Resend key at resend.com — or leave it blank if you don't need email verification.
+
+**Frontend** (optional — defaults already match local dev) — create `ai-waste-sort/.env`:
+
+```env
+VITE_AI_API_URL=http://localhost:8000
+VITE_REST_API_URL=http://localhost:3000/v1
+```
+
+### 2. Install dependencies
+
+```bash
+# Frontend
+cd ai-waste-sort
+npm install
+
+# Backend API
+cd ../backend/base_server
+npm install
+
+# AI service
+cd ..
+pip install fastapi "uvicorn[standard]" python-multipart \
+    opencv-python-headless numpy pillow
+# For real model inference (Python <= 3.12):
+pip install -r requirements.txt
+```
+
+### 3. Run the services (3 terminals)
+
+```bash
+# Terminal 1 — Frontend  →  http://localhost:5173
+cd ai-waste-sort && npm run dev
+
+# Terminal 2 — REST API  →  http://localhost:3000/v1
+cd backend/base_server && npm run dev
+
+# Terminal 3 — AI service  →  http://localhost:8000
+cd backend && python -m uvicorn main:app --port 8000 --reload
+```
+
+### 4. Test the pipeline
+
+1. Open http://localhost:5173 → sign up / log in
+2. Go to **Scan** → upload an image or use the camera
+3. Click **Save Scan** → check **History** to confirm it persisted to MongoDB
+
+### Notes
+
+- **Mock mode**: if `waste_detector.pt` is missing or `ultralytics` isn't installed, `/scan` returns simulated detections (random labels, ~95% confidence). Check `http://localhost:8000/health` — `"mode": "mock"` vs `"waste_model"`.
+- **Train a model**: `cd backend && python train.py` (uses `data/dataset-resized/`). Output weights go to `backend/` as `waste_detector.pt`.
+- Windows alternative: `start-all-services.bat` / `start-all-services.sh` at the repo root.
 
 
 📅 Development Timeline
