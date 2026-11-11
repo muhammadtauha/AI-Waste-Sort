@@ -1,0 +1,17 @@
+import tokenModel from '../models/token.model'
+import { IToken } from '../types/token.interface'
+
+export default {
+    createToken: (payload: IToken) => {
+        return tokenModel.create(payload)
+    },
+    findToken: (token: string) => {
+        return tokenModel.findOne({ token: token })
+    },
+    saveToken: (token: string, userId: string) => {
+        return tokenModel.create({ token, userId })
+    },
+    deleteToken: (token: string) => {
+        return tokenModel.deleteOne({ token: token })
+    }
+}
